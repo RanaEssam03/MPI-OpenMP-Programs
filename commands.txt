@@ -2,5 +2,7 @@ export OMP_NUM_THREADS=8
 
 gcc -o gfg -fopenmp geeksforgeeks.c
 
+ gcc -o my_program problem3.c -fopenmp -lm
+
 ./gfg
 
