@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
             }
         }
         if (max_votes > (num_voters / 2)) {
-            printf("Candidate %d wins in the first round with %d votes.\n", max_index + 1, max_votes);
+            printf("Candidate %d wins in the first round.\n", max_index + 1);
         } else {
             second_round = true;
         }
@@ -160,9 +160,9 @@ int main(int argc, char *argv[]) {
        MPI_Reduce(votes2, global_votes2, 2, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
        if(rank == 0){
            if(global_votes2[0] > global_votes2[1]){
-               printf("Candidate %d wins in the second round with %d votes.\n", max_index + 1, global_votes2[0]);
+               printf("Candidate %d wins in the second round.\n", max_index + 1);
            } else {
-               printf("Candidate %d wins in the second round with %d votes.\n", max_index2 + 1, global_votes2[1]);
+               printf("Candidate %d wins in the second round .\n", max_index2 + 1);
            }
        }   
     }
