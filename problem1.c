@@ -5,6 +5,20 @@
 #include <stdlib.h> // for rand()
 #include "mpi.h"
 
+
+
+void randomPermutation(int N, int* array) {
+    for (int i = 0; i < N; i++) {
+        array[i] = i + 1;
+    }
+    for (int i = N - 1; i > 0; i--) {
+        int j = rand() % (i + 1);
+        int temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+}
+
 int main(int argc, char *argv[]) {
     MPI_Init(&argc, &argv);
     
@@ -38,8 +52,10 @@ int main(int argc, char *argv[]) {
             fprintf(file, "%d %d\n", num_candidates, num_voters);
             // Generate voter preferences and write to file
             for (int i = 0; i < num_voters; i++) {
+                int perm[num_candidates];
+                randomPermutation(num_candidates, perm);
                 for (int j = 0; j < num_candidates; j++) {
-                    fprintf(file, "%d ", rand() % num_candidates);
+                    fprintf(file, "%d ", perm[j]);
                 }
                 fprintf(file, "\n");
             }
@@ -53,101 +69,95 @@ int main(int argc, char *argv[]) {
     // Broadcast filename to all processes
     MPI_Bcast(filename, 100, MPI_CHAR, 0, MPI_COMM_WORLD);
     
-    // Each process reads its portion of the file
-    int local_num_candidates, local_num_voters;
-    int **voter_preferences; // 2D array to store local voter preferences
-    
-    // Open the file in each process
-    file = fopen(filename, "r");
-    if (file == NULL) {
-        printf("Error opening file.\n");
-        MPI_Finalize();
-        return 1;
-    }
-    
-    // Read number of candidates and voters from file
-    if (rank == 0) {
+
+       if(rank == 0){
+        file = fopen(filename, "r");
+        if (file == NULL) {
+            printf("Error opening file.\n");
+            MPI_Finalize();
+            return 1;
+        }
+        fseek(file, 0, SEEK_SET);
         fscanf(file, "%d %d", &num_candidates, &num_voters);
+        fclose(file);
     }
     // Broadcast number of candidates and voters to all processes
     MPI_Bcast(&num_candidates, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&num_voters, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    
-    // Calculate the number of voters each process will handle
-    int voters_per_process = num_voters / size;
-    int remaining_voters = num_voters % size;
-    local_num_voters = (rank < remaining_voters) ? voters_per_process + 1 : voters_per_process;
-    
-    // Allocate memory for local voter preferences
-    local_num_candidates = num_candidates;
-    voter_preferences = (int **)malloc(local_num_voters * sizeof(int *));
-    for (int i = 0; i < local_num_voters; i++) {
-        voter_preferences[i] = (int *)malloc(local_num_candidates * sizeof(int));
+
+    int start = (rank * (num_voters / size))+1;
+    int end = (start + (num_voters / size)) - 1;
+    if(rank == size - 1) {
+        end = num_voters;
     }
-    
-    // Read local voter preferences from file
-    for (int i = 0; i < local_num_voters; i++) {
-        for (int j = 0; j < local_num_candidates; j++) {
-            fscanf(file, "%d", &voter_preferences[i][j]);
+    file = fopen(filename, "r");
+    fscanf(file, "%d %d", &num_candidates, &num_voters);
+    int ** preferences = (int **)malloc((end - start + 1) * sizeof(int *));
+    for (int i = 0; i < (end - start + 1); i++) {
+        preferences[i] = (int *)malloc(num_candidates * sizeof(int));
+    }
+    for (int i = 0; i < start - 1; i++) {
+        for (int j = 0; j < num_candidates; j++) {
+            int temp;
+            fscanf(file, "%d", &temp);
+        }
+    }
+    for(int i = start ; i<=end;i++){
+        for (int j = 0; j < num_candidates; j++) {
+            fscanf(file, "%d", &preferences[i-start][j]);
         }
     }
     fclose(file);
-    // Perform election process based on voter preferences
-// (each process calculates its portion of the votes)
-int *candidate_votes = (int *)malloc(num_candidates * sizeof(int));
-memset(candidate_votes, 0, num_candidates * sizeof(int));
 
-// First round of voting
-for (int i = 0; i < local_num_voters; i++) {
-    int first_choice = voter_preferences[i][0];
-    candidate_votes[first_choice]++;
-}
-
-// Determine if a candidate has more than 50% of the votes
-int max_votes = 0;
-int winning_candidate = -1;
-for (int i = 0; i < num_candidates; i++) {
-    if (candidate_votes[i] > max_votes) {
-        max_votes = candidate_votes[i];
-        winning_candidate = i;
+    int * votes = (int *)malloc(num_candidates * sizeof(int));
+    memset(votes, 0, num_candidates * sizeof(int));
+    for (int i = 0; i < (end - start + 1); i++) {
+        votes[preferences[i][0] - 1]++;
     }
-}
-bool second_round_needed = max_votes <= num_voters / 2;
-
-// If second round is needed, determine top 2 candidates
-int second_candidate = -1;
-if (second_round_needed) {
-    int second_max_votes = 0;
-    for (int i = 0; i < num_candidates; i++) {
-        if (i != winning_candidate && candidate_votes[i] > second_max_votes) {
-            second_max_votes = candidate_votes[i];
-            second_candidate = i;
+    int * global_votes = (int *)malloc(num_candidates * sizeof(int));
+    MPI_Reduce(votes, global_votes, num_candidates, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    bool second_round = false;
+    int max_votes = 0;
+    int max_index = 0;
+    if (rank == 0) {
+        for (int i = 0; i < num_candidates; i++) {
+            if (global_votes[i] > max_votes) {
+                max_votes = global_votes[i];
+                max_index = i;
+            }
+        }
+        if (max_votes > (num_voters / 2)) {
+            printf("Candidate %d wins in the first round with %d votes.\n", max_index + 1, max_votes);
+        } else {
+            second_round = true;
         }
     }
-}
-    
-    // Communicate among processes to determine the winner and round
-    // (not shown here, gather results from all processes and determine the winner)
-int global_winner, global_round;
-MPI_Reduce(&winning_candidate, &global_winner, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
-MPI_Reduce(&second_candidate, &global_round, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
-
-if (rank == 0) {
-    if (second_round_needed) {
-        printf("Winner: Candidate %d, Round: 2\n", global_winner);
-    } else {
-        printf("Winner: Candidate %d, Round: 1\n", global_winner);
+    MPI_Bcast(&second_round, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
+    if (second_round) {
+        int * votes2 = (int *)malloc(num_candidates * sizeof(int));
+        memset(votes2, 0, num_candidates * sizeof(int));
+        for (int i = 0; i < (end - start + 1); i++) {
+            for (int j = 0; j < num_candidates; j++) {
+                if (preferences[i][j] == max_index + 1) {
+                    votes2[preferences[i][j + 1] - 1]++;
+                    break;
+                }
+            }
+        }
+        int * global_votes2 = (int *)malloc(num_candidates * sizeof(int));
+        MPI_Reduce(votes2, global_votes2, num_candidates, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+        if (rank == 0) {
+            int max_votes2 = 0;
+            int max_index2 = 0;
+            for (int i = 0; i < num_candidates; i++) {
+                if (global_votes2[i] > max_votes2) {
+                    max_votes2 = global_votes2[i];
+                    max_index2 = i;
+                }
+            }
+            printf("Candidate %d wins in the second round with %d votes.\n", max_index2 + 1, max_votes2);
+        }
     }
-}
-
-free(candidate_votes);
-    
-    // Free dynamically allocated memory
-    for (int i = 0; i < local_num_voters; i++) {
-        free(voter_preferences[i]);
-    }
-    free(voter_preferences);
-    
     MPI_Finalize();
     return 0;
 }
