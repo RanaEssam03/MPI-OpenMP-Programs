@@ -81,7 +81,6 @@ int main(int argc, char *argv[]) {
         fscanf(file, "%d %d", &num_candidates, &num_voters);
         fclose(file);
     }
-    // Broadcast number of candidates and voters to all processes
     MPI_Bcast(&num_candidates, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&num_voters, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
