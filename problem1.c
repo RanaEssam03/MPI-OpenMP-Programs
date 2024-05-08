@@ -133,29 +133,38 @@ int main(int argc, char *argv[]) {
     }
     MPI_Bcast(&second_round, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
     if (second_round) {
-        int * votes2 = (int *)malloc(num_candidates * sizeof(int));
-        memset(votes2, 0, num_candidates * sizeof(int));
-        for (int i = 0; i < (end - start + 1); i++) {
-            for (int j = 0; j < num_candidates; j++) {
-                if (preferences[i][j] == max_index + 1) {
-                    votes2[preferences[i][j + 1] - 1]++;
-                    break;
-                }
-            }
+       // get max 2 votes with their indices
+       int max_votes2 = 0; 
+       int max_index2 = 0;
+       for(int i = 0; i < num_candidates; i++){
+           if(global_votes[i] > max_votes2 && i != max_index){
+               max_votes2 = global_votes[i];
+               max_index2 = i;
+           }
+       }
+       int * votes2 = (int *)malloc(2 * sizeof(int));
+       memset(votes2, 0, 2 * sizeof(int));
+       for(int i = start ; i<=end;i++){
+        for(int j = 0; j < num_candidates; j++){
+          if(preferences[i-start][j] == max_index + 1){
+            votes2[0]++;
+            break;
+          }
+        if(preferences[i-start][j] == max_index2 + 1){
+                votes2[1]++;
+                break;
         }
-        int * global_votes2 = (int *)malloc(num_candidates * sizeof(int));
-        MPI_Reduce(votes2, global_votes2, num_candidates, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-        if (rank == 0) {
-            int max_votes2 = 0;
-            int max_index2 = 0;
-            for (int i = 0; i < num_candidates; i++) {
-                if (global_votes2[i] > max_votes2) {
-                    max_votes2 = global_votes2[i];
-                    max_index2 = i;
-                }
-            }
-            printf("Candidate %d wins in the second round with %d votes.\n", max_index2 + 1, max_votes2);
         }
+       }
+       int * global_votes2 = (int *)malloc(2 * sizeof(int));
+       MPI_Reduce(votes2, global_votes2, 2, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+       if(rank == 0){
+           if(global_votes2[0] > global_votes2[1]){
+               printf("Candidate %d wins in the second round with %d votes.\n", max_index + 1, global_votes2[0]);
+           } else {
+               printf("Candidate %d wins in the second round with %d votes.\n", max_index2 + 1, global_votes2[1]);
+           }
+       }   
     }
     MPI_Finalize();
     return 0;
