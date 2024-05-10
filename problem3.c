@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
     int* localSums = malloc(totalThreads * sizeof(int));
 
     /* Begin of parallel region*/
-    #pragma omp parallel private(i)
+    #pragma omp parallel private(i) shared(N)
     {
         int* nums = malloc(N * sizeof(int));
         double localSum = 0;
@@ -28,7 +28,8 @@ int main(int argc, char* argv[])
         // 2. Calculate local sum of the generated n elements
         for ( i = 0; i < N; i++)
         {
-            nums[i] = rand() % 100;
+            nums[i] = rand()%100;
+            printf("At thread of %d, num[%d]= %d\n", thNum,i, nums[i]);
             localSum += nums[i];
         }
 
@@ -61,7 +62,7 @@ int main(int argc, char* argv[])
     // 7. Calculate the standard deviation
     double stdDeviation = sqrt(variance);
 
-    printf("Standard Deviation = %f\n", stdDeviation);
+    printf("____________________\n\nStandard Deviation = %f\n", stdDeviation);
     
     }
     
