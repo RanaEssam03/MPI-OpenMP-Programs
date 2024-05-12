@@ -1,10 +1,20 @@
-// OpenMP header
+/*
+Student 1 : 20210049
+Student 2 : 20200524
+Student 3 : 20210133
+*/
+
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include<math.h>
 #include <time.h>
 
+/*
+to run this program please use this command
+
+ gcc -o out problem3.c -fopenmp -lm
+*/
  
 int main(int argc, char* argv[])
 {

@@ -1,3 +1,9 @@
+/*
+Student 1 : 20210049
+Student 2 : 20200524
+Student 3 : 20210133
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
