@@ -83,9 +83,9 @@ int main(int argc, char *argv[]) {
     }
     MPI_Bcast(&num_candidates, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&num_voters, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-    int start = (rank * (num_voters / size))+1;
-    int end = (start + (num_voters / size)) - 1;
+    int part = (num_voters+(size-1)) / size;
+    int start = (rank * part)+1;
+    int end = (start + part) - 1;
     if(rank == size - 1) {
         end = num_voters;
     }
@@ -102,6 +102,7 @@ int main(int argc, char *argv[]) {
         }
     }
     for(int i = start ; i<=end;i++){
+        printf("Process %d is reading candidate preferences for voter %d\n", rank, i);
         for (int j = 0; j < num_candidates; j++) {
             fscanf(file, "%d", &preferences[i-start][j]);
         }
@@ -126,7 +127,8 @@ int main(int argc, char *argv[]) {
             }
         }
         if (max_votes > (num_voters / 2)) {
-            printf("Candidate %d wins in the first round.\n", max_index + 1);
+            float percentage = (float)max_votes / num_voters * 100;
+            printf("Candidate %d wins in the first round with %.2f%% of the votes.\n", max_index + 1, percentage);
         } else {
             second_round = true;
         }
@@ -160,9 +162,11 @@ int main(int argc, char *argv[]) {
        MPI_Reduce(votes2, global_votes2, 2, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
        if(rank == 0){
            if(global_votes2[0] > global_votes2[1]){
-               printf("Candidate %d wins in the second round.\n", max_index + 1);
+               float percentage = (float)global_votes2[0] / num_voters * 100;
+                printf("Candidate %d wins in the second round with %.2f%% of the votes.\n", max_index + 1, percentage);
            } else {
-               printf("Candidate %d wins in the second round .\n", max_index2 + 1);
+                 float percentage = (float)global_votes2[1] / num_voters * 100;
+                 printf("Candidate %d wins in the second round with %.2f%% of the votes.\n", max_index2 + 1, percentage);
            }
        }   
     }
