@@ -86,9 +86,11 @@ int main(int argc, char *argv[]) {
     int part = (num_voters+(size-1)) / size;
     int start = (rank * part)+1;
     int end = (start + part) - 1;
-    if(rank == size - 1) {
+    if(end > num_voters){
         end = num_voters;
     }
+    if(start <= num_voters)
+        printf("Process %d is responsible for voters %d to %d\n", rank, start, end);
     file = fopen(filename, "r");
     fscanf(file, "%d %d", &num_candidates, &num_voters);
     int ** preferences = (int **)malloc((end - start + 1) * sizeof(int *));
