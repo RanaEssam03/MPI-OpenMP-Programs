@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <stdlib.h> // for rand()
+#include <time.h>   // For time
 #include "mpi.h"
 
 
@@ -29,7 +30,8 @@ int main(int argc, char *argv[]) {
     int num_candidates, num_voters;
     FILE *file;
     char filename[100];
-    
+    /*Seed the random number generator ONCE*/
+    srand(time(NULL)); 
     if (rank == 0) {
         // Prompt user for file generation or calculation
         printf("Enter 'generate' to generate file or 'calculate' to compute the result: ");
