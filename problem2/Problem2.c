@@ -1,3 +1,9 @@
+/*
+Student 1 : 20210049
+Student 2 : 20200524
+Student 3 : 20210133
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <omp.h>
@@ -41,10 +47,12 @@ int main() {
     // indxArr to store the repetition
     // ans to store the indices
     int *indxArr = (int *) malloc(totalThreads * sizeof(int));
-    int **ans = (int **) malloc(col * row * 2 * sizeof(int *));
-    for (i = 0; i < row; i++)
+    int **ans = (int **) malloc(totalThreads* sizeof(int *));
+    for (i = 0; i < totalThreads; i++)
         ans[i] = (int *) malloc(col * row * 2 * sizeof(int));
+
     for (i = 0; i < totalThreads; i++) {
+        indxArr[i]=0;
         for (j = 0; j < col * row * 2; j++) {
             ans[i][j] = -1;
         }
@@ -89,5 +97,8 @@ int main() {
         free(matrix[i]);
     free(matrix);
 
+     for (i = 0; i < totalThreads; i++)
+        free(ans[i]);
+    free(ans);
     return 0;
 }
