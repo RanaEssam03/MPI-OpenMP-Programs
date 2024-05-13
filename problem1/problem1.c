@@ -138,12 +138,17 @@ int main(int argc, char *argv[]) {
        // get max 2 votes with their indices
        int max_votes2 = 0; 
        int max_index2 = 0;
+       if(rank == 0){
        for(int i = 0; i < num_candidates; i++){
            if(global_votes[i] > max_votes2 && i != max_index){
                max_votes2 = global_votes[i];
                max_index2 = i;
            }
        }
+       printf("Second round between candidates %d and %d\n", max_index + 1, max_index2 + 1);
+       }
+       MPI_Bcast(&max_index, 1, MPI_INT, 0, MPI_COMM_WORLD);
+       MPI_Bcast(&max_index2, 1, MPI_INT, 0, MPI_COMM_WORLD);
        int * votes2 = (int *)malloc(2 * sizeof(int));
        memset(votes2, 0, 2 * sizeof(int));
        for(int i = start ; i<=end;i++){
@@ -158,8 +163,10 @@ int main(int argc, char *argv[]) {
         }
         }
        }
+       printf("process %d votes for candidate in the second round %d: %d\n", rank, max_index + 1, votes2[0]);
+       printf("process %d votes for candidate in the second round %d: %d\n", rank, max_index2 + 1, votes2[1]);
        int * global_votes2 = (int *)malloc(2 * sizeof(int));
-       MPI_Reduce(votes2, global_votes2, 2, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+              MPI_Reduce(votes2, global_votes2, 2, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
        if(rank == 0){
            if(global_votes2[0] > global_votes2[1]){
                float percentage = (float)global_votes2[0] / num_voters * 100;
