@@ -163,8 +163,8 @@ int main(int argc, char *argv[]) {
         }
         }
        }
-       printf("process %d votes for candidate in the second round %d: %d\n", rank, max_index + 1, votes2[0]);
-       printf("process %d votes for candidate in the second round %d: %d\n", rank, max_index2 + 1, votes2[1]);
+       printf("process %d votes for candidate %d in the second round: %d\n", rank, max_index + 1, votes2[0]);
+       printf("process %d votes for candidate %d in the second round %d:\n", rank, max_index2 + 1, votes2[1]);
        int * global_votes2 = (int *)malloc(2 * sizeof(int));
               MPI_Reduce(votes2, global_votes2, 2, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
        if(rank == 0){
