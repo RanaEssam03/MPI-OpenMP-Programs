@@ -85,10 +85,14 @@ int main(int argc, char *argv[]) {
     }
     MPI_Bcast(&num_candidates, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(&num_voters, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    int part = (num_voters+(size-1)) / size;
+    int part = (num_voters) / size;
+    if(part == 0) part = 1;
     int start = (rank * part)+1;
     int end = (start + part) - 1;
     if(end > num_voters){
+        end = num_voters;
+    }
+    if(rank == size - 1){
         end = num_voters;
     }
     if(start <= num_voters)
@@ -155,6 +159,7 @@ int main(int argc, char *argv[]) {
        MPI_Bcast(&max_index2, 1, MPI_INT, 0, MPI_COMM_WORLD);
        int * votes2 = (int *)malloc(2 * sizeof(int));
        memset(votes2, 0, 2 * sizeof(int));
+    if(start <= num_voters){
        for(int i = start ; i<=end;i++){
         for(int j = 0; j < num_candidates; j++){
           if(preferences[i-start][j] == max_index + 1){
@@ -169,6 +174,7 @@ int main(int argc, char *argv[]) {
        }
        printf("process %d votes for candidate %d in the second round: %d\n", rank, max_index + 1, votes2[0]);
        printf("process %d votes for candidate %d in the second round %d:\n", rank, max_index2 + 1, votes2[1]);
+       }
        int * global_votes2 = (int *)malloc(2 * sizeof(int));
               MPI_Reduce(votes2, global_votes2, 2, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
        if(rank == 0){
