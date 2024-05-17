@@ -23,7 +23,7 @@ This repository contains solutions for three computational problems using MPI an
   - [Execution Instructions](#execution-instructions-2)
 - [Compilation and Running Instructions](#compilation-and-running-instructions)
 - [Prerequisites](#prerequisites)
-- [License](#license)
+
 
 ## Problem 1: Election to Choose a New President (using MPI)
 
