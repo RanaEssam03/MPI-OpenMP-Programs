@@ -1,4 +1,4 @@
-# MPI_OpenMP_Problems
+# MPI_OpenMP_Programs
 
 This repository contains solutions for three computational problems using MPI and OpenMP. The problems are as follows:
 1. **Election to Choose a New President (using MPI)**
